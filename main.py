@@ -10,9 +10,12 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.optim.lr_scheduler import CyclicLR
 import matplotlib.pyplot as plt
 import os
+import ast
+from sklearn.metrics import precision_score, recall_score
+
 # Load and preprocess data
 df = pd.read_csv('TMDB_balanced_movies.csv')
-
+df['genres'] = df['genres'].apply(lambda x: ast.literal_eval(x))
 mlb = MultiLabelBinarizer()
 y = mlb.fit_transform(df['genres'])
 train_texts, val_texts, train_labels, val_labels = train_test_split(
@@ -65,8 +68,7 @@ def calculate_accuracy(logits, labels):
 checkpoint_dir = "checkpoints"
 os.makedirs(checkpoint_dir, exist_ok=True)
 
-# Training loop
-num_epochs = 30
+num_epochs = 12
 train_accuracies = []
 val_accuracies = []
 
@@ -135,12 +137,13 @@ for epoch in range(num_epochs):
     print(f"Epoch {epoch}, Average Train Accuracy: {avg_train_accuracy}, Average Validation Accuracy: {avg_val_accuracy}")
 
     # Save model weights at the end of each epoch
-    checkpoint_path = os.path.join(checkpoint_dir, f"model_weights_epoch_{epoch}.pth")
-    torch.save(model.state_dict(), checkpoint_path)
-    print(f"Model weights saved at {checkpoint_path}")
+    model_save_path = os.path.join(checkpoint_dir, f"model_epoch_{epoch+1}.pth")
+    torch.save(model.state_dict(), model_save_path)
+    print(f"Model weights saved to {model_save_path}")
 
 # Close TensorBoard writer
 writer.close()
 del full_labels, val_tokens, y, train_dataset, val_dataset, train_loader, val_loader
 torch.cuda.empty_cache()
 gc.collect()
+
